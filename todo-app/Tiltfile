@@ -1,0 +1,35 @@
+# Tiltfile for Todo App
+
+# Set global options
+update_settings(max_parallel_updates=3)
+
+def run_postgres(port=5432, hostname='postgres'):
+  """
+  Deploy PostgreSQL database to Kubernetes
+
+  Args:
+    port: Local port to forward (default: 5432)
+    hostname: Kubernetes service name (default: 'postgres')
+  """
+  k8s_yaml('k8s/postgres.yaml')
+
+  k8s_resource(hostname,
+    port_forwards='{}:5432'.format(port),
+    labels=['database']
+  )
+
+# Run PostgreSQL
+run_postgres(port=5432, hostname='postgres')
+
+# Next.js app
+local_resource(
+  'next-dev',
+  serve_cmd='npm run dev',
+  deps=['src', 'package.json'],
+  labels=['app'],
+  readiness_probe=probe(
+    http_get=http_get_action(port=3000, path='/'),
+    initial_delay_secs=5,
+    period_secs=2
+  )
+)
