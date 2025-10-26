@@ -1,4 +1,5 @@
 import { eq } from 'drizzle-orm';
+import { v4 as uuidv4 } from 'uuid';
 
 import { db } from '@/db/index';
 import { todoPgTable } from '@/db/schema';
@@ -19,6 +20,26 @@ export class PostgresTodoRepository implements TodoRepository {
     }));
 
     return todoList;
+  }
+
+  async createTodo(todo: Todo): Promise<Todo> {
+    const newTodo = {
+      id: uuidv4(),
+      userId: todo.userId,
+      title: todo.title,
+      description: todo.description,
+      status: todo.status,
+    };
+
+    const [insertedTodo] = await db
+      .insert(todoPgTable)
+      .values(newTodo)
+      .returning();
+
+    return {
+      ...insertedTodo,
+      status: insertedTodo.status as TodoStatus,
+    };
   }
 }
 

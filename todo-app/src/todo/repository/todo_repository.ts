@@ -1,5 +1,11 @@
-import { Todo } from '@/todo/model/todo_model';
+import { Todo } from '../model/todo_model';
 
 export interface TodoRepository {
   getTodos(userId: string): Promise<Array<Todo>>;
+
+  createTodo(todo: Todo): Promise<Todo>;
+
+  updateTodo(todo: Todo): Promise<Todo>;
+
+  deleteTodo(todo: Todo): Promise<Todo>;
 }
