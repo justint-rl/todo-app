@@ -31,12 +31,22 @@ export async function GET(request: NextRequest) {
 // POST /api/todos - Create a new todo
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { userId, title, description } = body;
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
 
-    if (!userId || !title) {
+    const body = await request.json();
+    const { title, description } = body;
+
+    if (!userId) {
       return NextResponse.json(
-        { error: 'userId and title are required' },
+        { error: 'userId is required' },
+        { status: 400 },
+      );
+    }
+
+    if (!title) {
+      return NextResponse.json(
+        { error: 'title is required' },
         { status: 400 },
       );
     }

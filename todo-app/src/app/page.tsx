@@ -1,14 +1,11 @@
-import { Todo } from '@/todo/model/todo_model';
-import { eq } from 'drizzle-orm';
+import { Todo } from '@/todo/model';
+import { todoService } from '@/todo/module';
 
 export default async function Home() {
   // Replace 'demo-user' with actual user ID from auth
   const userId = 'demo-user';
 
-  const userTodos = await db
-    .select()
-    .from(todoPgTable)
-    .where(eq(todoPgTable.userId, userId));
+  const userTodos = await todoService.getTodos(userId)
 
   return (
     <div className="font-sans min-h-screen p-8">
