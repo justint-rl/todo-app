@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { todos } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+
+import { Todo, TodoStatus } from '@/todo/model';
+import { todoService } from '@/todo/module';
 
 // GET /api/todos - Get all todos for a user
 export async function GET(request: NextRequest) {
@@ -12,21 +12,18 @@ export async function GET(request: NextRequest) {
     if (!userId) {
       return NextResponse.json(
         { error: 'userId is required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const userTodos = await db
-      .select()
-      .from(todos)
-      .where(eq(todos.userId, userId));
+    const userTodos = await todoService.getTodos(userId);
 
     return NextResponse.json(userTodos);
   } catch (error) {
     console.error('Error fetching todos:', error);
     return NextResponse.json(
       { error: 'Failed to fetch todos' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -40,20 +37,23 @@ export async function POST(request: NextRequest) {
     if (!userId || !title) {
       return NextResponse.json(
         { error: 'userId and title are required' },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
-    const [newTodo] = await db
-      .insert(todos)
-      .values({
-        userId,
-        title,
-        description: description || null,
-      })
-      .returning();
+    const newTodo: Todo = {
+      id: '',
+      userId: userId,
+      title: title,
+      description: description,
+      status: TodoStatus.TODO,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-    return NextResponse.json(newTodo, { status: 201 });
+    const createdTodo = await todoService.createTodo(newTodo);
+
+    return NextResponse.json(createdTodo, { status: 201 });
   } catch (error) {
     console.error('Error creating todo:', error);
     return NextResponse.json(

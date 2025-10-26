@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/db';
-import { todos } from '@/db/schema';
-import { eq } from 'drizzle-orm';
+
+import { Todo } from '@/todo/model';
+import { todoService } from '@/todo/module';
 
 type RouteContext = {
   params: Promise<{ id: string }>;
@@ -14,31 +14,23 @@ export async function PATCH(
 ) {
   try {
     const { id } = await context.params;
-    const todoId = parseInt(id);
-
-    if (isNaN(todoId)) {
-      return NextResponse.json(
-        { error: 'Invalid todo ID' },
-        { status: 400 }
-      );
-    }
 
     const body = await request.json();
-    const { title, description, completed } = body;
+    // TODO: userId should eventually be pulled from JWT token
+    const { title, description, status, userId } = body;
 
-    const updateData: Record<string, unknown> = {
+    const updateData: Todo = {
+      id: id,
+      userId: userId,
+      title: title,
+      description: description,
+      status: status,
+      createdAt: new Date(),
       updatedAt: new Date(),
     };
 
-    if (title !== undefined) updateData.title = title;
-    if (description !== undefined) updateData.description = description;
-    if (completed !== undefined) updateData.completed = completed;
 
-    const [updatedTodo] = await db
-      .update(todos)
-      .set(updateData)
-      .where(eq(todos.id, todoId))
-      .returning();
+    const updatedTodo = await todoService.updateTodo(updateData);
 
     if (!updatedTodo) {
       return NextResponse.json(
@@ -64,19 +56,8 @@ export async function DELETE(
 ) {
   try {
     const { id } = await context.params;
-    const todoId = parseInt(id);
 
-    if (isNaN(todoId)) {
-      return NextResponse.json(
-        { error: 'Invalid todo ID' },
-        { status: 400 }
-      );
-    }
-
-    const [deletedTodo] = await db
-      .delete(todos)
-      .where(eq(todos.id, todoId))
-      .returning();
+    const deletedTodo = await todoService.deleteTodo(id);
 
     if (!deletedTodo) {
       return NextResponse.json(
