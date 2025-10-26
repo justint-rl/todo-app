@@ -7,5 +7,5 @@ export interface TodoRepository {
 
   updateTodo(todo: Todo): Promise<Todo>;
 
-  deleteTodo(todo: Todo): Promise<Todo>;
+  deleteTodo(id: string): Promise<Todo>;
 }
