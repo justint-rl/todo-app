@@ -1,16 +1,23 @@
 import { eq } from 'drizzle-orm';
 import { v4 as uuidv4 } from 'uuid';
+import type { PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 
-import { db } from '@/db/index';
+import { db as defaultDb } from '@/db/index';
 import { todoPgTable } from '@/db/schema';
+import * as schema from '@/db/schema';
 
 import { TodoRepository } from '../todo_repository';
 import { Todo, TodoStatus } from '../../model/todo_model';
-import { describe } from 'node:test';
 
 export class PostgresTodoRepository implements TodoRepository {
+  private db: PostgresJsDatabase<typeof schema>;
+
+  constructor(db?: PostgresJsDatabase<typeof schema>) {
+    this.db = db || defaultDb;
+  }
+
   async getTodos(userId: string): Promise<Array<Todo>> {
-    const queryResult = await db
+    const queryResult = await this.db
       .select()
       .from(todoPgTable)
       .where(eq(todoPgTable.userId, userId));
@@ -35,7 +42,7 @@ export class PostgresTodoRepository implements TodoRepository {
       updatedAt: now,
     };
 
-    const [insertedTodo] = await db
+    const [insertedTodo] = await this.db
       .insert(todoPgTable)
       .values(newTodo)
       .returning();
@@ -54,7 +61,7 @@ export class PostgresTodoRepository implements TodoRepository {
       status: todo.status,
       updatedAt: now,
     }
-    const [updateResult] = await db
+    const [updateResult] = await this.db
       .update(todoPgTable)
       .set(updatedTodo)
       .where(eq(todoPgTable.id, todo.id))
@@ -67,7 +74,7 @@ export class PostgresTodoRepository implements TodoRepository {
   }
 
   async deleteTodo(id: string): Promise<Todo> {
-    const [deletedTodo] = await db
+    const [deletedTodo] = await this.db
       .delete(todoPgTable)
       .where(eq(todoPgTable.id, id))
       .returning();
