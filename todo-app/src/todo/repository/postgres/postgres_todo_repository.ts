@@ -6,6 +6,7 @@ import { todoPgTable } from '@/db/schema';
 
 import { TodoRepository } from '../todo_repository';
 import { Todo, TodoStatus } from '../../model/todo_model';
+import { describe } from 'node:test';
 
 export class PostgresTodoRepository implements TodoRepository {
   async getTodos(userId: string): Promise<Array<Todo>> {
@@ -23,12 +24,15 @@ export class PostgresTodoRepository implements TodoRepository {
   }
 
   async createTodo(todo: Todo): Promise<Todo> {
+    const now = new Date();
     const newTodo = {
       id: uuidv4(),
       userId: todo.userId,
       title: todo.title,
       description: todo.description,
       status: todo.status,
+      createdAt: now,
+      updatedAt: now,
     };
 
     const [insertedTodo] = await db
@@ -43,15 +47,22 @@ export class PostgresTodoRepository implements TodoRepository {
   }
 
   async updateTodo(todo: Todo): Promise<Todo> {
-    const [updatedTodo] = await db
+    const now = new Date();
+    const updatedTodo = {
+      title: todo.title,
+      description: todo.description,
+      status: todo.status,
+      updatedAt: now,
+    }
+    const [updateResult] = await db
       .update(todoPgTable)
-      .set(todo)
+      .set(updatedTodo)
       .where(eq(todoPgTable.id, todo.id))
       .returning();
 
     return {
-      ...updatedTodo,
-      status: updatedTodo.status as TodoStatus,
+      ...updateResult,
+      status: updateResult.status as TodoStatus,
     }
   }
 
