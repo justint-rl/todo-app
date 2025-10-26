@@ -3,7 +3,7 @@ import { validate as validateUuid } from 'uuid';
 import { Todo, TodoStatus } from '../model/todo_model';
 import { TodoRepository } from '../repository/todo_repository';
 
-class TodoService {
+export class TodoService {
   private todoRepository: TodoRepository;
 
   constructor(todoRepository: TodoRepository) {
