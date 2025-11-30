@@ -2,8 +2,8 @@ import { Todo } from '@/todo/model';
 import { todoService } from '@/todo/module';
 
 export default async function Home() {
-  // Replace 'demo-user' with actual user ID from auth
-  const userId = 'demo-user';
+  // Replace '6e164175-19b7-40e3-bd95-4a52b3a11fd7' with actual user ID from auth
+  const userId = '6e164175-19b7-40e3-bd95-4a52b3a11fd7';
 
   const userTodos = await todoService.getTodos(userId)
 
