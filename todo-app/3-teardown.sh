@@ -13,6 +13,34 @@ ensure_command_exists() {
   fi
 }
 
+stop_process() {
+  pid=$1
+  echo "Stopping process (PID: $pid)"
+
+  # Try graceful shutdown first
+  kill $pid
+
+  # Wait a few seconds to see if it stops
+  sleep 2
+
+  # Check if still running
+  if ps -p $pid > /dev/null 2>&1; then
+    echo "Process still running, forcing shutdown..."
+    kill -9 $pid
+  fi
+}
+
+find_process_by_command() {
+  local command_pattern="$1"
+
+  # Use pgrep to find processes matching the command pattern
+  # -f flag searches the full command line
+  local pids=$(pgrep -f "$command_pattern" 2>/dev/null)
+
+  # Return the PIDs (could be multiple, one per line)
+  echo "$pids"
+}
+
 teardown_tilt() {
   ensure_command_exists "tilt"
   # Run tilt down
@@ -42,19 +70,7 @@ teardown_tilt() {
     # Check if it's tilt
     if [[ "$process_name" == *"tilt"* ]]; then
       echo "Found Tilt process (PID: $pid) on port $port"
-      echo "Stopping Tilt..."
-
-      # Try graceful shutdown first
-      kill $pid
-
-      # Wait a few seconds to see if it stops
-      sleep 2
-
-      # Check if still running
-      if ps -p $pid > /dev/null 2>&1; then
-        echo "Process still running, forcing shutdown..."
-        kill -9 $pid
-      fi
+      stop_process $pid
 
       echo "✔ Tilt stopped successfully"
       return
@@ -65,11 +81,33 @@ teardown_tilt() {
   done <<< "$pids"
 }
 
+teardown_dev() {
+  echo "Looking for npm dev server..."
+
+  # Find npm run dev processes
+  local pids=$(find_process_by_command "npm run dev")
+
+  if [ -z "$pids" ]; then
+    echo "No npm dev server found"
+    return 0
+  fi
+
+  # Loop through each PID and stop it
+  while IFS= read -r pid; do
+    [ -z "$pid" ] && continue
+
+    echo "Found npm dev server (PID: $pid)"
+    stop_process $pid
+    echo "✔ Dev server stopped"
+  done <<< "$pids"
+}
+
 teardown() {
   echo "Tearing down infrastructure..."
   echo
 
   teardown_tilt
+  teardown_dev
 
   echo
   echo "Teardown complete"
